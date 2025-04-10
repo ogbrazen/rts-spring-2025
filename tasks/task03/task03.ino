@@ -1,47 +1,51 @@
-struct Blinker {
-  uint8_t pin;
-  unsigned long period;
-  unsigned long lastToggle;
-  bool state;
-};
+const int ledPins[] = {3, 5, 6, 9, 10};
+const unsigned long togglePeriods[] = {10000, 1000, 500, 100, 50};
+volatile bool toggleStates[] = {LOW, LOW, LOW, LOW, LOW};
 
-Blinker blinkers[] = {
-  {3, 10000, 0, LOW},
-  {5, 1000, 0, LOW},
-  {6, 500, 0, LOW},
-  {9, 100, 0, LOW},
-  {10, 50, 0, LOW}
-};
+unsigned long lastFlip0;
+unsigned long lastFlip1;
+unsigned long lastFlip2;
+unsigned long lastFlip3;
+unsigned long lastFlip4;
 
-constexpr uint8_t blinkerCount = sizeof(blinkers) / sizeof(Blinker);
-
-void configurePins() {
-  for (uint8_t i = 0; i < blinkerCount; i++) {
-    pinMode(blinkers[i].pin, OUTPUT);
-    digitalWrite(blinkers[i].pin, blinkers[i].state);
-    blinkers[i].lastToggle = micros();  // initialize all with current time
+void initialize() {
+  for (int j = 0; j < 5; j++) {
+    pinMode(ledPins[j], OUTPUT);
   }
+
+  unsigned long startupTime = micros();
+  lastFlip0 = startupTime;
+  lastFlip1 = startupTime;
+  lastFlip2 = startupTime;
+  lastFlip3 = startupTime;
+  lastFlip4 = startupTime;
 }
 
-void updateBlinker(Blinker &b, unsigned long currentMicros) {
-  if (currentMicros - b.lastToggle >= b.period) {
-    b.lastToggle = currentMicros;
-    b.state = !b.state;
-    digitalWrite(b.pin, b.state);
-  }
-}
+void loop() {
+  unsigned long nowMicros = micros();
 
-void refreshAll() {
-  unsigned long now = micros();
-  for (uint8_t i = 0; i < blinkerCount; i++) {
-    updateBlinker(blinkers[i], now);
+  if (nowMicros - lastFlip4 >= togglePeriods[4]) {
+    PORTB ^= B00000100;
+    lastFlip4 = nowMicros;
+  }
+  if (nowMicros - lastFlip3 >= togglePeriods[3]) {
+    PORTB ^= B00000010;
+    lastFlip3 = nowMicros;
+  }
+  if (nowMicros - lastFlip2 >= togglePeriods[2]) {
+    PORTD ^= B01000000;
+    lastFlip2 = nowMicros;
+  }
+  if (nowMicros - lastFlip1 >= togglePeriods[1]) {
+    PORTD ^= B00100000;
+    lastFlip1 = nowMicros;
+  }
+  if (nowMicros - lastFlip0 >= togglePeriods[0]) {
+    PORTD ^= B00001000;
+    lastFlip0 = nowMicros;
   }
 }
 
 void setup() {
-  configurePins();
-}
-
-void loop() {
-  refreshAll();
+  initialize();
 }
